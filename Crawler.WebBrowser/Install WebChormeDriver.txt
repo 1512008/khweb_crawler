@@ -1,0 +1,1 @@
+PM> Install-Package Selenium.WebDriver.ChromeDriver -Version 92.0.4515.10700
