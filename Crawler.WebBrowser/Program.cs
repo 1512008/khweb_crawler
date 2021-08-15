@@ -17,7 +17,7 @@ namespace Crawler.WebBrowser
 
         static void Main(string[] args)
         {
-          //  GetDataFromLuxStay().GetAwaiter().GetResult();
+            //  GetDataFromLuxStay().GetAwaiter().GetResult();
 
             GetDataFromAgoda().GetAwaiter().GetResult();
         }
@@ -79,7 +79,7 @@ namespace Crawler.WebBrowser
                         {
                             RoomId = roomId,
                             RoomType = info[0].Split('-')[0].Trim(),
-                            QuantityRoomBedQuantity = info[0].Split('-')[1].Trim(),
+                            RoomBed = info[0].Split('-')[1].Trim(),
                             Rated = info[1],
                             HotelName = info[2],
                             Price = info[3]
@@ -91,7 +91,7 @@ namespace Crawler.WebBrowser
                         {
                             RoomId = roomId,
                             RoomType = info[0].Split('-')[0].Trim(),
-                            QuantityRoomBedQuantity = info[0].Split('-')[1].Trim(),
+                            RoomBed = info[0].Split('-')[1].Trim(),
                             Rated = string.Empty,
                             HotelName = info[1],
                             Price = info[2]
@@ -104,10 +104,12 @@ namespace Crawler.WebBrowser
             await Task.FromResult(true);
         }
 
-        private static async Task GetDataFromAgoda()
+        private static Task GetDataFromAgoda()
         {
-
-            var vnwUrl = "https://ohmyhotel.com/search?opts.destination.categoryId=1&opts.destination.categoryName=City&opts.destination.id=24542&opts.destination.name=Th%C3%A0nh%20ph%E1%BB%91%20H%E1%BB%93%20Ch%C3%AD%20Minh,%20Vi%E1%BB%87t%20Nam&opts.destination.code=24542&opts.period.checkIn=2021-08-11&opts.period.checkOut=2021-08-12&opts.occupancy.rooms=1&opts.occupancy.adults=1&opts.occupancy.children=0&trans.currency=VND&trans.language=vi-VN&track=0.9330870563857758";
+            var checkIn = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            var checkOut = DateTime.UtcNow.AddDays(1).ToString("yyyy-MM-dd");
+            var rooms = new List<RoomInfo>();
+            var vnwUrl = $"https://www.agoda.com/search?guid=e6c6768f-986a-425d-b4f0-297d23d8b9c5&asq=NQVGXW6jsE3tbdY9S%2BqUCpufa9Vwpz6XltTHq4n%2B9gPt6Sc9VYM%2BOtJvOdzFsuZ%2F5kMzEej9SJ9XOFLrMHApsfrXF%2FveKVgBKI%2FRAtbae%2BTcVDyrNRiphdYIhRTeYe0vRvjiPwOQzlyjMO%2FTwXbiC4pK0j93MeO9eTQGF7dDDKl6KraawkN4LAFofMwsDDRU6pcwohZHIJB5tf%2F5dGSvoqiY6qLH8RctyzDbtjPZR3M%3D&city=13170&tick=637638004484&locale=en-us&ckuid=337fdcb2-b143-444f-91d7-3af4ac0d33c3&prid=0&currency=VND&correlationId=12bc6db4-aa2b-453e-b466-1d45460a3b3a&pageTypeId=1&realLanguageId=1&languageId=1&origin=VN&cid=1844104&userId=337fdcb2-b143-444f-91d7-3af4ac0d33c3&whitelabelid=1&loginLvl=0&storefrontId=3&currencyId=78&currencyCode=VND&htmlLanguage=en-us&cultureInfoName=en-us&machineName=sg-crweb-6014&trafficGroupId=1&sessionId=xmdksygkgjrtdcay2dc2r5jk&trafficSubGroupId=84&aid=130589&useFullPageLogin=true&cttp=4&isRealUser=true&mode=production&checkIn={checkIn}&checkOut={checkOut}&rooms=1&adults=2&children=0&priceCur=VND&los=1&textToSearch=Ho%20Chi%20Minh%20City&travellerType=1&familyMode=off";
             using (var driver = new ChromeDriver())
             {
                 driver.Navigate().GoToUrl(vnwUrl);
@@ -115,24 +117,26 @@ namespace Crawler.WebBrowser
 
                 var htmlDocument = new HtmlDocument();
                 htmlDocument.LoadHtml(driver.PageSource);
-                var elements = htmlDocument.DocumentNode.Descendants("div")
+                var elements = htmlDocument.DocumentNode.Descendants("li")
                     .Where(element => element.GetAttributeValue("class", "")
-                                    .Equals("vue-recycle-scroller__item-view")).ToList();
-                foreach (var item in elements)
+                                    .Equals("PropertyCard PropertyCardItem")).ToList();
+                foreach (var element in elements)
                 {
-
+                    var hotelName = element.Descendants("h3").Where(e => e.GetAttributeValue("class", "").Equals("PropertyCard__HotelName")).FirstOrDefault()?.InnerText;
+                    var address = element.Descendants("span").Where(e => e.GetAttributeValue("class", "").Equals("Address__Text")).FirstOrDefault()?.InnerText;
+                    var rated = element.Descendants("p").Where(e => e.GetAttributeValue("class", "").Equals("sc-ctaXAZ kLsGUE kite-js-Typography ")).FirstOrDefault()?.InnerText;
+                    var price = element.Descendants("span").Where(e => e.GetAttributeValue("class", "").Equals("PropertyCardPrice__Value")).FirstOrDefault()?.InnerText;
+                    rooms.Add(new RoomInfo()
+                    {
+                        HotelName = hotelName,
+                        Price = price,
+                        Rated = rated,
+                        rom
+                    });
                 }
+
+                return Task.FromResult(true);
             }
-
-            //var htmlDocument = new HtmlDocument();
-            //htmlDocument.LoadHtml(html);
-            //var elements = htmlDocument.DocumentNode.Descendants("div")
-            //    .Where(element => element.GetAttributeValue("class", "")
-            //                    .Equals("vue-recycle-scroller__item-view")).ToList();
-            //foreach (var item in elements)
-            //{
-
-            //}
         }
 
         private static async Task GetLuxStayRoomDetailInfoByAPI(ICollection<RoomInfo> roomInfos)
