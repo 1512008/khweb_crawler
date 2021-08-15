@@ -15,5 +15,7 @@
         public string Price { get; set; }
 
         public string Address { get; set; }
+
+        public string MaxPrice { get; set; }
     }
 }

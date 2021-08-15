@@ -1,5 +1,6 @@
 ﻿using Crawler.WebBrowser.Model;
 using HtmlAgilityPack;
+using Newtonsoft.Json;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using System;
@@ -17,14 +18,18 @@ namespace Crawler.WebBrowser
 
         static void Main(string[] args)
         {
-            //  GetDataFromLuxStay().GetAwaiter().GetResult();
+            var tasks = new List<Task>();
 
-            GetDataFromAgoda().GetAwaiter().GetResult();
+            tasks.Add(Task.Run(()=> GetDataFromLuxStay().GetAwaiter().GetResult())) ;
+
+            tasks.Add(Task.Run(() => GetDataFromAgoda().GetAwaiter().GetResult()));
+            
+            Task.WhenAll(tasks).GetAwaiter().GetResult();
         }
 
         private static async Task GetDataFromLuxStay()
         {
-            // Initialize the Chrome Driver
+            //Initialize the Chrome Driver
             using (var driver = new ChromeDriver())
             {
                 // Go to the home page
@@ -98,8 +103,8 @@ namespace Crawler.WebBrowser
                         });
                     }
                 }
-
-                //await GetLuxStayRoomDetailInfoByAPI(roomsinfo);
+                
+                await GetLuxStayRoomDetailInfoByAPI(roomsinfo);
             }
             await Task.FromResult(true);
         }
@@ -131,7 +136,7 @@ namespace Crawler.WebBrowser
                         HotelName = hotelName,
                         Price = price,
                         Rated = rated,
-                        rom
+                        Address = address
                     });
                 }
 
@@ -141,10 +146,19 @@ namespace Crawler.WebBrowser
 
         private static async Task GetLuxStayRoomDetailInfoByAPI(ICollection<RoomInfo> roomInfos)
         {
-            var url = $"https://api.luxstay.com/api/rooms/" + roomInfos.FirstOrDefault().RoomId.ToString();
-            var httpClient = new HttpClient();
-            var infoResponse = await httpClient.GetAsync(url);
-            var roomInfo = infoResponse.Content.ReadAsStringAsync();
+            using (var httpClient = new HttpClient())
+            {
+                foreach (var item in roomInfos)
+                {
+                    var url = $"https://api.luxstay.com/api/rooms/" + item.RoomId.ToString();
+                    var infoResponse = await httpClient.GetAsync(url);
+                    var roomInfo = await infoResponse.Content.ReadAsStringAsync();
+                    var deserialized = JsonConvert.DeserializeObject<dynamic>(roomInfo);
+                    item.Address = deserialized?.address?.data?.full_address ?? string.Empty;
+                    item.MaxPrice = deserialized?.price?.data?.nightly_price_vnd ?? string.Empty;
+                    Thread.Sleep(1500);
+                }
+            }
         }
     }
 }
