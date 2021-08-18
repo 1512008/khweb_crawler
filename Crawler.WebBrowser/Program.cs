@@ -5,6 +5,7 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
@@ -20,14 +21,26 @@ namespace Crawler.WebBrowser
         {
             var tasks = new List<Task>();
 
-            tasks.Add(Task.Run(()=> GetDataFromLuxStay().GetAwaiter().GetResult())) ;
-
+            tasks.Add(Task.Run(() => GetDataFromLuxStay("Ho Chi Minh").GetAwaiter().GetResult()));
+            Thread.Sleep(2000);
+            tasks.Add(Task.Run(() => GetDataFromLuxStay("Da Nang").GetAwaiter().GetResult()));
+            Thread.Sleep(2000);
+            tasks.Add(Task.Run(() => GetDataFromLuxStay("Ha Noi").GetAwaiter().GetResult()));
+            Thread.Sleep(2000);
             tasks.Add(Task.Run(() => GetDataFromAgoda().GetAwaiter().GetResult()));
-            
+
             Task.WhenAll(tasks).GetAwaiter().GetResult();
+
+            Console.Clear();
+            Console.WriteLine("\n\n\n");
+            Console.WriteLine("***********************************************");
+            Console.WriteLine("Crawling data successful.");
+            Console.WriteLine("Press any key to stop...");
+            Console.WriteLine("***********************************************");
+            Console.ReadKey();
         }
 
-        private static async Task GetDataFromLuxStay()
+        private static async Task GetDataFromLuxStay(string destination)
         {
             //Initialize the Chrome Driver
             using (var driver = new ChromeDriver())
@@ -35,13 +48,15 @@ namespace Crawler.WebBrowser
                 // Go to the home page
                 driver.Navigate().GoToUrl("https://www.luxstay.com/vi/");
                 Thread.Sleep(3000);
+                driver.Manage().Window.Maximize();
+                Thread.Sleep(1000);
                 var searchDestination = driver.FindElementById("search-input");
-                searchDestination.SendKeys(" Ho Chi Minh");
+                searchDestination.SendKeys($" {destination}");
                 Thread.Sleep(2000);
                 var locations = driver.FindElementsByClassName("search-suggest__item").ToList();
                 Thread.Sleep(2000);
-                var destination = locations.FirstOrDefault();
-                destination.Click();
+                var destinationBtn = locations.FirstOrDefault();
+                destinationBtn.Click();
                 var dateStartTime = DateTime.Now.ToString("yyyy-MM-dd");
                 var dateEndTime = DateTime.Now.AddDays(1).ToString("yyyy-MM-dd");
                 var dateStart = driver.FindElementByXPath($"//button[@date='{dateStartTime}']");
@@ -68,11 +83,11 @@ namespace Crawler.WebBrowser
 
                 Thread.Sleep(5000);
 
-                var rooms = driver.FindElementsByClassName("promo");
+                var roomsElements = driver.FindElementsByClassName("promo");
                 var roomIds = driver.FindElementsByClassName("promo");
                 var roomsinfo = new List<RoomInfo>();
                 string[] stringSeparators = new string[] { "\r\n" };
-                foreach (var item in rooms)
+                foreach (var item in roomsElements)
                 {
                     var roomId = item.FindElement(elementType)?.GetAttribute("data-value");
                     var info = item.Text.Split(stringSeparators, StringSplitOptions.None);
@@ -87,7 +102,7 @@ namespace Crawler.WebBrowser
                             RoomBed = info[0].Split('-')[1].Trim(),
                             Rated = info[1],
                             HotelName = info[2],
-                            Price = info[3]
+                            Price = info[3].Substring(0, info[3].LastIndexOf('/'))
                         });
                     }
                     else if (length == 3)
@@ -99,52 +114,66 @@ namespace Crawler.WebBrowser
                             RoomBed = info[0].Split('-')[1].Trim(),
                             Rated = string.Empty,
                             HotelName = info[1],
-                            Price = info[2]
+                            Price = info[2].Substring(0, info[2].LastIndexOf('/'))
                         });
                     }
                 }
-                
-                await GetLuxStayRoomDetailInfoByAPI(roomsinfo);
+
+                var rooms = await GetLuxStayRoomDetailInfoByAPI(roomsinfo);
+                WriteFile(rooms, $"room_data_lux_stay_{destination.Replace(" ","_")}.txt");
             }
             await Task.FromResult(true);
         }
 
         private static Task GetDataFromAgoda()
         {
+            var destinations = new List<string> { "Ho%20Chi%20Minh%20City", "Da%20Nang", "Hanoi" };
             var checkIn = DateTime.UtcNow.ToString("yyyy-MM-dd");
             var checkOut = DateTime.UtcNow.AddDays(1).ToString("yyyy-MM-dd");
-            var rooms = new List<RoomInfo>();
-            var vnwUrl = $"https://www.agoda.com/search?guid=e6c6768f-986a-425d-b4f0-297d23d8b9c5&asq=NQVGXW6jsE3tbdY9S%2BqUCpufa9Vwpz6XltTHq4n%2B9gPt6Sc9VYM%2BOtJvOdzFsuZ%2F5kMzEej9SJ9XOFLrMHApsfrXF%2FveKVgBKI%2FRAtbae%2BTcVDyrNRiphdYIhRTeYe0vRvjiPwOQzlyjMO%2FTwXbiC4pK0j93MeO9eTQGF7dDDKl6KraawkN4LAFofMwsDDRU6pcwohZHIJB5tf%2F5dGSvoqiY6qLH8RctyzDbtjPZR3M%3D&city=13170&tick=637638004484&locale=en-us&ckuid=337fdcb2-b143-444f-91d7-3af4ac0d33c3&prid=0&currency=VND&correlationId=12bc6db4-aa2b-453e-b466-1d45460a3b3a&pageTypeId=1&realLanguageId=1&languageId=1&origin=VN&cid=1844104&userId=337fdcb2-b143-444f-91d7-3af4ac0d33c3&whitelabelid=1&loginLvl=0&storefrontId=3&currencyId=78&currencyCode=VND&htmlLanguage=en-us&cultureInfoName=en-us&machineName=sg-crweb-6014&trafficGroupId=1&sessionId=xmdksygkgjrtdcay2dc2r5jk&trafficSubGroupId=84&aid=130589&useFullPageLogin=true&cttp=4&isRealUser=true&mode=production&checkIn={checkIn}&checkOut={checkOut}&rooms=1&adults=2&children=0&priceCur=VND&los=1&textToSearch=Ho%20Chi%20Minh%20City&travellerType=1&familyMode=off";
-            using (var driver = new ChromeDriver())
+            foreach (var destination in destinations)
             {
-                driver.Navigate().GoToUrl(vnwUrl);
-                Thread.Sleep(3000);
-
-                var htmlDocument = new HtmlDocument();
-                htmlDocument.LoadHtml(driver.PageSource);
-                var elements = htmlDocument.DocumentNode.Descendants("li")
-                    .Where(element => element.GetAttributeValue("class", "")
-                                    .Equals("PropertyCard PropertyCardItem")).ToList();
-                foreach (var element in elements)
+                var rooms = new List<RoomInfo>();
+                var vnwUrl = $"https://www.agoda.com/search?guid=e6c6768f-986a-425d-b4f0-297d23d8b9c5&asq=NQVGXW6jsE3tbdY9S%2BqUCpufa9Vwpz6XltTHq4n%2B9gPt6Sc9VYM%2BOtJvOdzFsuZ%2F5kMzEej9SJ9XOFLrMHApsfrXF%2FveKVgBKI%2FRAtbae%2BTcVDyrNRiphdYIhRTeYe0vRvjiPwOQzlyjMO%2FTwXbiC4pK0j93MeO9eTQGF7dDDKl6KraawkN4LAFofMwsDDRU6pcwohZHIJB5tf%2F5dGSvoqiY6qLH8RctyzDbtjPZR3M%3D&city=13170&tick=637638004484&locale=en-us&ckuid=337fdcb2-b143-444f-91d7-3af4ac0d33c3&prid=0&currency=VND&correlationId=12bc6db4-aa2b-453e-b466-1d45460a3b3a&pageTypeId=1&realLanguageId=1&languageId=1&origin=VN&cid=1844104&userId=337fdcb2-b143-444f-91d7-3af4ac0d33c3&whitelabelid=1&loginLvl=0&storefrontId=3&currencyId=78&currencyCode=VND&htmlLanguage=en-us&cultureInfoName=en-us&machineName=sg-crweb-6014&trafficGroupId=1&sessionId=xmdksygkgjrtdcay2dc2r5jk&trafficSubGroupId=84&aid=130589&useFullPageLogin=true&cttp=4&isRealUser=true&mode=production&checkIn={checkIn}&checkOut={checkOut}&rooms=1&adults=2&children=0&priceCur=VND&los=1&textToSearch={destination}&travellerType=1&familyMode=off";
+                using (var driver = new ChromeDriver())
                 {
-                    var hotelName = element.Descendants("h3").Where(e => e.GetAttributeValue("class", "").Equals("PropertyCard__HotelName")).FirstOrDefault()?.InnerText;
-                    var address = element.Descendants("span").Where(e => e.GetAttributeValue("class", "").Equals("Address__Text")).FirstOrDefault()?.InnerText;
-                    var rated = element.Descendants("p").Where(e => e.GetAttributeValue("class", "").Equals("sc-ctaXAZ kLsGUE kite-js-Typography ")).FirstOrDefault()?.InnerText;
-                    var price = element.Descendants("span").Where(e => e.GetAttributeValue("class", "").Equals("PropertyCardPrice__Value")).FirstOrDefault()?.InnerText;
-                    rooms.Add(new RoomInfo()
+                    driver.Navigate().GoToUrl(vnwUrl);
+                    Thread.Sleep(3000);
+                    driver.Manage().Window.Maximize();
+                    Thread.Sleep(1000);
+                    for (int i = 0; i < 7; i++)
                     {
-                        HotelName = hotelName,
-                        Price = price,
-                        Rated = rated,
-                        Address = address
-                    });
-                }
+                        driver.ExecuteScript("window.scrollBy(0,1050)", "");
+                        Thread.Sleep(3500);
+                    }
 
-                return Task.FromResult(true);
+                    var htmlDocument = new HtmlDocument();
+                    htmlDocument.LoadHtml(driver.PageSource);
+                    var elements = htmlDocument.DocumentNode.Descendants("li")
+                        .Where(element => element.GetAttributeValue("class", "")
+                                        .Equals("PropertyCard PropertyCardItem")).ToList();
+                    foreach (var element in elements)
+                    {
+                        var hotelName = element.Descendants("h3").Where(e => e.GetAttributeValue("class", "").Equals("PropertyCard__HotelName")).FirstOrDefault()?.InnerText;
+                        var address = element.Descendants("span").Where(e => e.GetAttributeValue("class", "").Equals("Address__Text")).FirstOrDefault()?.InnerText;
+                        var rated = element.Descendants("p").Where(e => e.GetAttributeValue("class", "").Equals("sc-ctaXAZ kLsGUE kite-js-Typography ")).FirstOrDefault()?.InnerText;
+                        var price = element.Descendants("span").Where(e => e.GetAttributeValue("class", "").Equals("PropertyCardPrice__Value")).FirstOrDefault()?.InnerText;
+                        if (!string.IsNullOrEmpty(price))
+                            rooms.Add(new RoomInfo()
+                            {
+                                HotelName = hotelName,
+                                Price = price,
+                                Rated = rated,
+                                Address = address
+                            });
+                    }
+
+                    WriteFile(rooms, $"room_data_agoda_{destination.Replace("%20", "_")}.txt");
+                }
             }
+            return Task.FromResult(true);
         }
 
-        private static async Task GetLuxStayRoomDetailInfoByAPI(ICollection<RoomInfo> roomInfos)
+        private static async Task<ICollection<RoomInfo>> GetLuxStayRoomDetailInfoByAPI(ICollection<RoomInfo> roomInfos)
         {
             using (var httpClient = new HttpClient())
             {
@@ -154,11 +183,21 @@ namespace Crawler.WebBrowser
                     var infoResponse = await httpClient.GetAsync(url);
                     var roomInfo = await infoResponse.Content.ReadAsStringAsync();
                     var deserialized = JsonConvert.DeserializeObject<dynamic>(roomInfo);
-                    item.Address = deserialized?.address?.data?.full_address ?? string.Empty;
-                    item.MaxPrice = deserialized?.price?.data?.nightly_price_vnd ?? string.Empty;
+                    item.Address = deserialized?.data?.address?.data?.full_address ?? string.Empty;
+                    item.MaxPrice = deserialized?.data?.price?.data?.nightly_price_vnd ?? string.Empty;
                     Thread.Sleep(1500);
                 }
             }
+
+            return roomInfos;
+        }
+
+        private static void WriteFile(ICollection<RoomInfo> roomInfos, string fileName)
+        {
+            string path = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.Parent.FullName, fileName);
+            File.Delete(path);
+            var data = JsonConvert.SerializeObject(roomInfos);
+            File.WriteAllText(path, data);
         }
     }
 }
