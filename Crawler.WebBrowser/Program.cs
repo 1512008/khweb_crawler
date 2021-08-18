@@ -5,6 +5,7 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -19,22 +20,35 @@ namespace Crawler.WebBrowser
 
         static void Main(string[] args)
         {
+          
             var tasks = new List<Task>();
+            
+            // start watch
+            var watch = Stopwatch.StartNew();
 
+            // get room info form lux stay
             tasks.Add(Task.Run(() => GetDataFromLuxStay("Ho Chi Minh").GetAwaiter().GetResult()));
             Thread.Sleep(2000);
             tasks.Add(Task.Run(() => GetDataFromLuxStay("Da Nang").GetAwaiter().GetResult()));
             Thread.Sleep(2000);
             tasks.Add(Task.Run(() => GetDataFromLuxStay("Ha Noi").GetAwaiter().GetResult()));
             Thread.Sleep(2000);
+
+            // get room info form agoda
             tasks.Add(Task.Run(() => GetDataFromAgoda().GetAwaiter().GetResult()));
 
+            // await result
             Task.WhenAll(tasks).GetAwaiter().GetResult();
 
+            // end watch
+            watch.Stop();
+            var elapsedMs = watch.ElapsedMilliseconds;
+            
+            // stop program
             Console.Clear();
             Console.WriteLine("\n\n\n");
             Console.WriteLine("***********************************************");
-            Console.WriteLine("Crawling data successful.");
+            Console.WriteLine($"Crawling data successful.Spend time: {elapsedMs}");
             Console.WriteLine("Press any key to stop...");
             Console.WriteLine("***********************************************");
             Console.ReadKey();
@@ -137,9 +151,8 @@ namespace Crawler.WebBrowser
                 using (var driver = new ChromeDriver())
                 {
                     driver.Navigate().GoToUrl(vnwUrl);
-                    Thread.Sleep(3000);
                     driver.Manage().Window.Maximize();
-                    Thread.Sleep(1000);
+                    Thread.Sleep(2000);
                     for (int i = 0; i < 7; i++)
                     {
                         driver.ExecuteScript("window.scrollBy(0,1050)", "");
