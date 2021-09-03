@@ -46,6 +46,7 @@ namespace Crawler.WebBrowser
             Console.WriteLine($"Crawling data successful.Spend time: {elapsedMs}");
             Console.WriteLine("Press any key to stop...");
             Console.WriteLine("***********************************************");
+            WriteFile(new List<RoomInfo>(), "time_run.txt", elapsedMs.ToString());
             Console.ReadKey();
         }
 
@@ -67,7 +68,7 @@ namespace Crawler.WebBrowser
                 var destinationBtn = locations.FirstOrDefault();
                 destinationBtn.Click();
                 var dateStartTime = DateTime.Now.ToString("yyyy-MM-dd");
-                var dateEndTime = DateTime.Now.AddDays(1).ToString("yyyy-MM-dd");
+                var dateEndTime = DateTime.Now.AddDays(2).ToString("yyyy-MM-dd");
                 var dateStart = driver.FindElementByXPath($"//button[@date='{dateStartTime}']");
                 dateStart.Click();
                 var dateEnd = driver.FindElementByXPath($"//button[@date='{dateEndTime}']");
@@ -127,17 +128,13 @@ namespace Crawler.WebBrowser
                     }
                 }
 
-                //var rooms = await GetLuxStayRoomDetailInfoByAPI(roomsinfo);
-                WriteFile(roomsinfo, $"room_data_lux_stay_{destination.Replace(" ", "_")}.txt");
+                _ = GetLuxStayRoomDetailInfoByAPI(roomsinfo, destination);
             }
             await Task.FromResult(true);
         }
 
         private static async Task GetDataFromAgoda(string destination, string destinationUrl)
         {
-            var checkIn = DateTime.UtcNow.ToString("yyyy-MM-dd");
-            var checkOut = DateTime.UtcNow.AddDays(1).ToString("yyyy-MM-dd");
-
             var rooms = new List<RoomInfo>();
             using (var driver = new ChromeDriver())
             {
@@ -176,8 +173,9 @@ namespace Crawler.WebBrowser
             await Task.FromResult(true);
         }
 
-        private static async Task<ICollection<RoomInfo>> GetLuxStayRoomDetailInfoByAPI(ICollection<RoomInfo> roomInfos)
+        private static async Task GetLuxStayRoomDetailInfoByAPI(ICollection<RoomInfo> roomInfos, string destination)
         {
+
             using (var httpClient = new HttpClient())
             {
                 foreach (var item in roomInfos)
@@ -192,12 +190,12 @@ namespace Crawler.WebBrowser
                 }
             }
 
-            return roomInfos;
+            WriteFile(roomInfos, $"room_data_lux_stay_{destination.Replace(", Ho Chi Minh", "").Replace(" ", "_")}.txt");
         }
 
         private static async Task HandleMultipleThreadLuxStay()
         {
-            SemaphoreSlim semaphore = new SemaphoreSlim(5);
+            SemaphoreSlim semaphore = new SemaphoreSlim(5, 10);
             var destinations = new List<string> {
                 "quan 1, Ho Chi Minh",
                  "quan 2, Ho Chi Minh",
@@ -238,7 +236,10 @@ namespace Crawler.WebBrowser
 
         private static async Task HandleMultipleThreadAgoda()
         {
-            SemaphoreSlim semaphore = new SemaphoreSlim(6, 10);
+            var checkIn = DateTime.UtcNow.ToString("yyyy-MM-dd");
+            var checkOut = DateTime.UtcNow.AddDays(2).ToString("yyyy-MM-dd");
+
+            SemaphoreSlim semaphore = new SemaphoreSlim(5, 10);
             var destinations = new Dictionary<string, string> {
                 { "quan 1", "https://www.agoda.com/search?guid=1a2babdf-20af-4261-a0f9-085be1c0edf0&asq=NQVGXW6jsE3tbdY9S%2BqUCpufa9Vwpz6XltTHq4n%2B9gPt6Sc9VYM%2BOtJvOdzFsuZ%2FQag7inMrcpSc7vYIumAwES9fRGHnPTpjJwT6ErV8M7j0pbngfvHXOkDFiUa5YN%2FHhHh%2BF4RB%2BXJZiC1BIbAv9AqQMycviD3CIWSJVwpQ8soBAIjwUkfjrVaLXVAl8WobEiNwKatvoXAhe6N4YuKcnUHb%2BKC2e3zym6tmyvlzCzM%3D&area=93586&tick=637661342313&locale=en-us&ckuid=337fdcb2-b143-444f-91d7-3af4ac0d33c3&prid=0&currency=VND&correlationId=4ddf76c5-408b-4631-b0e5-4378d63ffbae&pageTypeId=103&realLanguageId=1&languageId=1&origin=VN&cid=1844104&userId=337fdcb2-b143-444f-91d7-3af4ac0d33c3&whitelabelid=1&loginLvl=0&storefrontId=3&currencyId=78&currencyCode=VND&htmlLanguage=en-us&cultureInfoName=en-us&machineName=sg-crweb-6021&trafficGroupId=1&sessionId=avf52a2jea2xgy0aom5xxf20&trafficSubGroupId=84&aid=130589&useFullPageLogin=true&cttp=4&isRealUser=true&mode=production&checkIn={checkIn}&checkOut={checkOut}&rooms=1&adults=2&children=0&priceCur=VND&los=1&textToSearch=District%201&travellerType=1&familyMode=off&productType=-1" },
                 { "quan 2","https://www.agoda.com/search?guid=1a2babdf-20af-4261-a0f9-085be1c0edf0&asq=NQVGXW6jsE3tbdY9S%2BqUCpufa9Vwpz6XltTHq4n%2B9gPt6Sc9VYM%2BOtJvOdzFsuZ%2FQag7inMrcpSc7vYIumAwES9fRGHnPTpjJwT6ErV8M7j0pbngfvHXOkDFiUa5YN%2FHhHh%2BF4RB%2BXJZiC1BIbAv9AqQMycviD3CIWSJVwpQ8soBAIjwUkfjrVaLXVAl8WobEiNwKatvoXAhe6N4YuKcnUHb%2BKC2e3zym6tmyvlzCzM%3D&area=93586&tick=637661342313&locale=en-us&ckuid=337fdcb2-b143-444f-91d7-3af4ac0d33c3&prid=0&currency=VND&correlationId=4ddf76c5-408b-4631-b0e5-4378d63ffbae&pageTypeId=103&realLanguageId=1&languageId=1&origin=VN&cid=1844104&userId=337fdcb2-b143-444f-91d7-3af4ac0d33c3&whitelabelid=1&loginLvl=0&storefrontId=3&currencyId=78&currencyCode=VND&htmlLanguage=en-us&cultureInfoName=en-us&machineName=sg-crweb-6021&trafficGroupId=1&sessionId=avf52a2jea2xgy0aom5xxf20&trafficSubGroupId=84&aid=130589&useFullPageLogin=true&cttp=4&isRealUser=true&mode=production&checkIn={checkIn}&checkOut={checkOut}&rooms=1&adults=2&children=0&priceCur=VND&los=1&textToSearch=District%201&travellerType=1&familyMode=off&productType=-1"},
@@ -261,7 +262,7 @@ namespace Crawler.WebBrowser
 
             var tasks = new List<Task>();
 
-            tasks = destinations.Select(s => Task.Run(async ()=>
+            tasks = destinations.Select(s => Task.Run(async () =>
             {
                 await semaphore.WaitAsync();
                 try
@@ -278,11 +279,11 @@ namespace Crawler.WebBrowser
             await Task.WhenAll(tasks);
         }
 
-        private static void WriteFile(ICollection<RoomInfo> roomInfos, string fileName)
+        private static void WriteFile(ICollection<RoomInfo> roomInfos, string fileName,string timeRun = "")
         {
             string path = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.Parent.FullName, fileName);
             File.Delete(path);
-            var data = JsonConvert.SerializeObject(roomInfos);
+            var data = !string.IsNullOrEmpty(timeRun) ? timeRun : JsonConvert.SerializeObject(roomInfos);
             File.WriteAllText(path, data);
         }
     }

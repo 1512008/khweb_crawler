@@ -29,8 +29,8 @@ C:\Users\An Ho\Desktop\Learning\Project_KHWeb\khweb_crawler\Crawler.WebBrowser\b
 C:\Users\An Ho\Desktop\Learning\Project_KHWeb\khweb_crawler\Crawler.WebBrowser\bin\Debug\Selenium.WebDriverBackedSelenium.xml
 C:\Users\An Ho\Desktop\Learning\Project_KHWeb\khweb_crawler\Crawler.WebBrowser\bin\Debug\WebDriver.xml
 C:\Users\An Ho\Desktop\Learning\Project_KHWeb\khweb_crawler\Crawler.WebBrowser\bin\Debug\WebDriver.Support.xml
+C:\Users\An Ho\Desktop\Learning\Project_KHWeb\khweb_crawler\Crawler.WebBrowser\obj\Debug\Crawler.WebBrowser.csproj.AssemblyReference.cache
 C:\Users\An Ho\Desktop\Learning\Project_KHWeb\khweb_crawler\Crawler.WebBrowser\obj\Debug\Crawler.WebBrowser.csproj.CoreCompileInputs.cache
 C:\Users\An Ho\Desktop\Learning\Project_KHWeb\khweb_crawler\Crawler.WebBrowser\obj\Debug\Crawler.WebBrowser.csproj.CopyComplete
 C:\Users\An Ho\Desktop\Learning\Project_KHWeb\khweb_crawler\Crawler.WebBrowser\obj\Debug\Crawler.WebBrowser.exe
 C:\Users\An Ho\Desktop\Learning\Project_KHWeb\khweb_crawler\Crawler.WebBrowser\obj\Debug\Crawler.WebBrowser.pdb
-C:\Users\An Ho\Desktop\Learning\Project_KHWeb\khweb_crawler\Crawler.WebBrowser\obj\Debug\Crawler.WebBrowser.csproj.AssemblyReference.cache
