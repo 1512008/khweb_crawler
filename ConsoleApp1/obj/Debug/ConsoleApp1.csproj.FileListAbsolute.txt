@@ -1,0 +1,7 @@
+C:\Users\An Ho\Desktop\Learning\Project_KHWeb\khweb_crawler\ConsoleApp1\bin\Debug\ConsoleApp1.exe.config
+C:\Users\An Ho\Desktop\Learning\Project_KHWeb\khweb_crawler\ConsoleApp1\bin\Debug\ConsoleApp1.exe
+C:\Users\An Ho\Desktop\Learning\Project_KHWeb\khweb_crawler\ConsoleApp1\bin\Debug\ConsoleApp1.pdb
+C:\Users\An Ho\Desktop\Learning\Project_KHWeb\khweb_crawler\ConsoleApp1\obj\Debug\ConsoleApp1.csproj.AssemblyReference.cache
+C:\Users\An Ho\Desktop\Learning\Project_KHWeb\khweb_crawler\ConsoleApp1\obj\Debug\ConsoleApp1.csproj.CoreCompileInputs.cache
+C:\Users\An Ho\Desktop\Learning\Project_KHWeb\khweb_crawler\ConsoleApp1\obj\Debug\ConsoleApp1.exe
+C:\Users\An Ho\Desktop\Learning\Project_KHWeb\khweb_crawler\ConsoleApp1\obj\Debug\ConsoleApp1.pdb
