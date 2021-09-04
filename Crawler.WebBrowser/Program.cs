@@ -21,8 +21,6 @@ namespace Crawler.WebBrowser
 
         static void Main(string[] args)
         {
-            //var tasks = new List<Task>();
-
             // start watch
             var watch = Stopwatch.StartNew();
 
@@ -31,9 +29,6 @@ namespace Crawler.WebBrowser
 
             // get room info form agoda
             HandleMultipleThreadAgoda().GetAwaiter().GetResult();
-
-            // await result
-            //Task.WhenAll(tasks).GetAwaiter().GetResult();
 
             // end watch
             watch.Stop();
