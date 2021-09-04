@@ -1,3 +1,9 @@
 -google_chrome_92.0.4515.107: Install-Package Selenium.WebDriver.ChromeDriver -Version 92.0.4515.10700
 -google_chrome_91.0.4472.101: Install-Package Selenium.WebDriver.ChromeDriver -Version 91.0.4472.10100
 -google_chrome_90.0.4430.240: Install-Package Selenium.WebDriver.ChromeDriver -Version 90.0.4430.2400
+
+
+Install-Package HtmlAgilityPack -Version 1.11.34
+Install-Package Selenium.Support -Version 3.141.0
+Install-Package Selenium.WebDriver -Version 3.141.0
+Install-Package Selenium.WebDriverBackedSelenium -Version 3.141.0
